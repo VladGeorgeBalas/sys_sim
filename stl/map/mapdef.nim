@@ -1,4 +1,5 @@
 import ../../pair
+from ../map import {map, map_node}
 
 proc newMapNode*[K, T]() : ptr mapNode[K, T] =
   return cast[mapNode[K,T]](alloc(sizeof(mapNode[K, T])))
