@@ -13,7 +13,7 @@ type
     #balance factor for rebalancing tree
     balanceFactor* : int
     #content of the node, as pairs
-    key : K
+    key* : K
     value : V
   # wrapper class for the AVL tree of map
   # should be only one visible to the user
@@ -65,56 +65,87 @@ proc isNotEmpty*(src : map) : bool =
   return src != nil
 #proc size(src : map[K, T]) : uint
 
+proc rightRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V]
+proc leftRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V]
+proc leftRightRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V]
+proc rightLeftRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V]
+
 # utility proc for setting balance factor
 # should be private by default
-proc setBalanceFactor(src : var map) : int =
-  let right_len : int = if src.right != nil: setBalanceFactor(src.right) else: 0
-  let left_len : int = if src.left != nil: setBalanceFactor(src.left) else: 0
+proc balanceMap[K, V](src : var map[K, V]) : (ptr map_node[K, V], int) =
+  var (right, right_len) : (ptr map_node[K, V], int) = (
+    if src.right != nil:
+      balanceMap[K, V](src.right)
+    else: 
+      (src.right, 0)
+  )
+  var (left, left_len) : (ptr map_node[K, V], int) = (
+    if src.left != nil:
+      balanceMap[K, V](src.left)
+    else:
+      (src.left, 0)
+  )
 
+  src.left = left
+  src.right = right
   src.balanceFactor = right_len - left_len
 
-  return (if right_len > left_len: right_len else: left_len) + 1
+  var rotated : bool = false
+  if src.balanceFactor > 1:
+    rotated = true
+    if src.right.balanceFactor > 0:
+      src = leftRotation(src)
+    else:
+      src = rightLeftRotation(src)
+  elif src.balanceFactor < -1:
+    rotated = true
+    if src.left.balanceFactor < 0:
+      src = rightRotation(src)
+    else:
+      src = leftRightRotation(src)
+
+  if rotated == true:
+    (right, right_len) = (
+      if src.right != nil:
+        balanceMap[K, V](src.right)
+      else: 
+        (src.right, 0)
+    )
+    (left, left_len) = (
+      if src.left != nil:
+        balanceMap[K, V](src.left)
+      else:
+        (src.left, 0)
+    )
+
+  return (src, (if right_len > left_len: right_len else: left_len) + 1)
 
 # rotations for avl balancing
-proc rightRotation(src : var ptr map_node) : ptr map_node =
-  TODO("tradu in engleza")
-  # valorile ce vor fi mutate
-  # subarborele din stanga
-  let left : ptr map_node = src.left
+proc rightRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V] =
+  let left : ptr map_node[K, V] = src.left
+  let left_right : ptr map_node[K, V] = left.right
 
-  # subarborele din dreapta al celui din stanga
-  # daca este nil nu conteaza deoarece oricum se muta
-  let left_right : ptr map_node = left.right
-
-  # rotatie la dreapta
   left.right = src
-
-  # mutam restul in golul ramas
-  src.left = tmp_right
+  src.left = left_right
   
   return left
 
-proc leftRotation(src : var ptr map_node) : ptr map_node =
-  let right : ptr map_node = src.right
-  let right_left : ptr map_node = right.left
+proc leftRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V] =
+  let right : ptr map_node[K, V] = src.right
+  let right_left : ptr map_node[K, V] = right.left
 
   right.left = src;
   src.right = right_left
 
   return right
 
-proc leftRightRotation(src : var ptr map_node) : ptr map_node =
+proc leftRightRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V] =
   src.left = leftRotation(src.left)
   return rightRotation(src)
 
-proc rightLeftRotation(src : var ptr map_node) : ptr map_node =
+proc rightLeftRotation[K, V](src : var ptr map_node[K, V]) : ptr map_node[K, V] =
   src.right = rightRotation(src.right)
   return leftRotation(src)
-
-# utility proc to balance tree
-# should be private by default
-proc balanceMapAVL(src : var map_node) = 
-  if(src.left != nil and src.left.b)balanceMapAVL
 
 # element manipulation
 proc addElement*[K, T](dest : var map[K, T], src : pair[K, T]) =
@@ -142,17 +173,29 @@ proc addElement*[K, T](dest : var map[K, T], src : pair[K, T]) =
     else:
       current_node.right = newMapNode(src)
 
-    discard setBalanceFactor(dest)
+    var discardVal : int
+    (dest, discardVal) =  balanceMap(dest)
 
-# proc remove()
+# proc removeElement()
 
 # element retrieval and modification
-# proc getElement[K, T](key : K) : T
+proc getElementByVal*[K, T](src : map[K, T], key : K) : T =
+  var current : ptr map_node[K, T] = src
+  
+  while current.key != key and current != nil:
+    if current.key > key:
+      current = current.left
+    elif current.key < key:
+      current = current.right
+
+  return current.value
+
 # proc getElementByPtr[K, T]() : ptr T
 # proc getElementByRef[K, T]() : ref T
 
 # operators
 # acces operators '[]'
+# operator `[]=`
 # assignment operators '='
 # comparison operators '=='
 # reunion/addition operators '+' '+='
