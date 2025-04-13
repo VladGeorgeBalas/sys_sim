@@ -176,7 +176,25 @@ proc addElement*[K, T](dest : var map[K, T], src : pair[K, T]) =
     var discardVal : int
     (dest, discardVal) =  balanceMap(dest)
 
-# proc removeElement()
+proc removeElement[K, V](src : var map[K, T], key : K) =
+  # gasim nodul care trebuie sters
+  var parent : ptr map_node[K, T] = nil
+  var current : ptr map_node[K, T] = src
+  
+  while current.key != key and current != nil:
+    parent = current
+    if current.key > key:
+      current = current.left
+    elif current.key < key:
+      current = current.right
+
+  # verificam cazurile posibile: nil, fara nod in dreapta, sau cu nod
+  # nu s-a gasit nod
+  if current == nil:
+    return;
+  elif current.right == nil:
+    if current.left != nil:
+      
 
 # element retrieval and modification
 proc getElementByVal*[K, T](src : map[K, T], key : K) : T =
@@ -195,7 +213,7 @@ proc getElementByVal*[K, T](src : map[K, T], key : K) : T =
 
 # operators
 # acces operators '[]'
-# operator `[]=`
+# assignment operators `[]=`
 # assignment operators '='
 # comparison operators '=='
 # reunion/addition operators '+' '+='
